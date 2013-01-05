@@ -13,11 +13,11 @@ Parser::IPTables::Save - A parser for iptables-save output files.
 
 =head1 VERSION
 
-Version 0.04
+Version 0.0.5
 
 =cut
 
-our $VERSION = '0.04';
+our $VERSION = '0.0.5';
 
 
 =head1 SYNOPSIS
@@ -231,8 +231,28 @@ sub table {
 				} 
 			}
 
+			# input interface
+			if($line =~ /-i\s+([\w\d\!\+]+)/g) {
+				$rule->{iface_input} = $1;
+
+				# when get only ! character
+				if($rule->{iface_input} =~ /^\!$/) {
+					$rule->{iface_input} = '! '.$1 if($line =~ /-i\s+\!\s+([\w\d\!\+]+)/);
+				}
+			}
+
+			# output interface
+			if($line =~ /-o\s+([\w\d\!\+]+)/g) {
+				$rule->{iface_output} = $1;
+
+				# when get only ! character
+				if($rule->{iface_output} =~ /^\!$/) {
+					$rule->{iface_output} = '! '.$1 if($line =~ /-o\s+\!\s+([\w\d\!\+]+)/);
+				}
+			}
+
 			# state
-			if($line =~ /--state\s+(\w+)/g) {
+			if($line =~ /--state\s+([\w,]+)/g) {
 				$rule->{state} = $1;
 			}
 
@@ -256,6 +276,10 @@ sub table {
 				} 
 			}
 
+			# icmp-type
+			if($line =~ /--icmp-type\s+(\d+)/g) {
+				$rule->{icmp_type} = $1;
+			}
 
 			# target
 			$rule->{target} = $1 if($line =~ /-j\s+([\w]+)/);
@@ -433,6 +457,9 @@ sub save {
 		# destination port
 		$str_rule .= '--dport '.$rule->{port_destination}.' ' if($rule->{port_destination}); 
 
+		# icmp_type
+		$str_rule .= '--icmp-type '.$rule->{icmp_type}.' ' if($rule->{icmp_type});
+
 		# target
 		$str_rule .= '-j '.$rule->{target}.' ' if($rule->{target}); 
 
@@ -456,6 +483,10 @@ sub save {
 =head1 AUTHOR
 
 Geovanny Junio, C<< <geovannyjs at gmail.com> >>
+
+=head1 CONTRIBUTORS
+
+rpetre: Petru Rațiu
 
 =head1 BUGS
 
@@ -501,7 +532,7 @@ L<http://search.cpan.org/dist/Parser-IPTables-Save/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010 Geovanny Junio.
+Copyright 2013 Geovanny Junio.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of either: the GNU General Public License as published
